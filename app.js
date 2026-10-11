@@ -25,12 +25,10 @@ const state = {
     { id: "spearmen", name: "مشاة الرماح", count: 40, cost: { gold: 15, food: 15 } },
     { id: "chariots", name: "المركبات الحربية", count: 5, cost: { gold: 100, wood: 50 } }
   ],
-  // أبحاث المملكة
   research: [
     { id: "iron_weapons", name: "أسلحة حديدية", level: 0, maxLevel: 3, cost: { gold: 150, stone: 80 }, desc: "تزيد كفاءة وقوة الجيش بنسبة 15% لكل مستوى." },
     { id: "pharaoh_mining", name: "تعدين الأهرامات", level: 0, maxLevel: 3, cost: { gold: 120, wood: 60 }, desc: "تزيد إنتاج الموارد التلقائي بنسبة 20% لكل مستوى." }
   ],
-  // المهام اليومية
   quests: [
     { id: "train_5", title: "تدريب الجنود", desc: "قم بتدريب 5 وحدات عسكرية جديدة", target: 5, progress: 0, reward: { gold: 100 }, completed: false },
     { id: "upgrade_b", title: "تطوير المباني", desc: "قم بترقية أي مبنى في المملكة", target: 1, progress: 0, reward: { stone: 80 }, completed: false }
@@ -60,40 +58,52 @@ function loadGame() {
   }
 }
 
-// === Web Audio API (مؤثرات صوتية) ===
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+// === Web Audio API (تهيئة آمنة ومؤجلة لمنع توقف الجوال) ===
+let audioCtx = null;
+function getAudioContext() {
+  if (!audioCtx) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) audioCtx = new AudioContextClass();
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
 
 function playCoinSound() {
   try {
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    osc.frequency.setValueAtTime(800, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
     osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    gain.connect(ctx.destination);
     osc.start();
-    osc.stop(audioCtx.currentTime + 0.1);
+    osc.stop(ctx.currentTime + 0.1);
   } catch (e) {}
 }
 
 function playSwordSound() {
   try {
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
     osc.type = 'triangle';
-    osc.frequency.setValueAtTime(200, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.15);
-    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+    osc.frequency.setValueAtTime(200, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
     osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    gain.connect(ctx.destination);
     osc.start();
-    osc.stop(audioCtx.currentTime + 0.15);
+    osc.stop(ctx.currentTime + 0.15);
   } catch (e) {}
 }
 
@@ -148,7 +158,6 @@ function upgradeBuilding(buildingId) {
   }
   b.level++;
   
-  // تحديث تقدم مهام تطوير المباني
   const q = state.quests.find(item => item.id === "upgrade_b");
   if (q && !q.completed) {
     q.progress = Math.min(q.target, q.progress + 1);
@@ -178,7 +187,6 @@ function trainTroop(troopId) {
   }
   t.count += 5;
 
-  // تحديث تقدم مهام تدريب الجنود
   const q = state.quests.find(item => item.id === "train_5");
   if (q && !q.completed) {
     q.progress = Math.min(q.target, q.progress + 5);
@@ -252,7 +260,6 @@ function attackCastle(castle) {
   }
 
   playSwordSound();
-  // حساب بونص الأبحاث للهجوم
   const weaponTech = state.research.find(item => item.id === "iron_weapons")?.level || 0;
   const success = Math.random() > (0.4 - (weaponTech * 0.05));
 
@@ -535,7 +542,6 @@ document.addEventListener("DOMContentLoaded", () => {
   loadGame();
   render();
 
-  // الإنتاج التلقائي للموارد كل 10 ثوانٍ (مع مراعاة بونص الأبحاث وفيضان النيل)
   setInterval(() => {
     if (!state.user) return;
     const miningTech = state.research.find(item => item.id === "pharaoh_mining")?.level || 0;
