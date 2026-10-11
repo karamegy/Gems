@@ -1,0 +1,9 @@
+{
+  "name": "قلاع الجيزة",
+  "short_name": "قلاع الجيزة",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#1a1208",
+  "theme_color": "#d4af37",
+  "icons": []
+}
