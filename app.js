@@ -1,41 +1,90 @@
 // === حالة اللعبة الإجمالية (State) ===
 const state = {
-  user: null, // بيانات المستخدم
-  activeTab: "overview", // التبويب النشط
+  user: null,
+  activeTab: "overview",
   toastMessage: null,
   toastTimer: null,
-  // الموارد الحالية
   resources: {
     gold: 500,
     stone: 300,
     wood: 200,
     food: 400
   },
-  // القلاع الموجودة على الخريطة
   castles: [
     { id: 1, name: "قلعة خوفو العظمى", owner: "لاعب 1", isMine: true, x: 48, y: 35, level: 3, hp: 1000 },
     { id: 2, name: "حصن الفرعون", owner: "رمسيس", isMine: false, x: 30, y: 50, level: 2, hp: 600 },
     { id: 3, name: "معسكر الواحة", owner: "مجهول", isMine: false, x: 70, y: 65, level: 1, hp: 300 }
   ],
-  // المباني المتاحة للبناء
   buildings: [
     { id: "gold_mine", name: "منجم الذهب", level: 1, cost: { gold: 100, stone: 50 }, prod: "10 ذهب/ساعة" },
     { id: "quarry", name: "محجر المحاجر", level: 1, cost: { gold: 50, stone: 100 }, prod: "15 حجارة/ساعة" },
     { id: "farm", name: "مزارع النيل", level: 2, cost: { gold: 80, wood: 60 }, prod: "20 طعام/ساعة" }
   ],
-  // القوات العسكرية
   troops: [
     { id: "archers", name: "رماة السهام", count: 25, cost: { gold: 20, food: 10 } },
     { id: "spearmen", name: "مشاة الرماح", count: 40, cost: { gold: 15, food: 15 } },
     { id: "chariots", name: "المركبات الحربية", count: 5, cost: { gold: 100, wood: 50 } }
   ],
-  // سجل الأحداث
   logs: [
     "مرحباً بك في قلاع الجيزة!",
     "تم تأسيس مملكتك بنجاح قرب نهر النيل."
   ],
-  selectedCastle: null // القلعة المحددة للمعاينة
+  selectedCastle: null
 };
+
+// === LocalStorage (حفظ واسترجاع التقدم) ===
+function saveGame() {
+  localStorage.setItem('giza_castles_state', JSON.stringify(state));
+}
+
+function loadGame() {
+  const saved = localStorage.getItem('giza_castles_state');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      Object.assign(state, parsed);
+    } catch (e) {
+      console.error("خطأ في استرجاع البيانات المحفوظة", e);
+    }
+  }
+}
+
+// === Web Audio API (مؤثرات صوتية بدون ملفات خارجية) ===
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playCoinSound() {
+  try {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.1);
+  } catch (e) {}
+}
+
+function playSwordSound() {
+  try {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.15);
+  } catch (e) {}
+}
 
 // === الوظائف المساعدة ===
 function showToast(msg) {
@@ -51,6 +100,7 @@ function showToast(msg) {
 function addLog(text) {
   const time = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
   state.logs.unshift(`[${time}] ${text}`);
+  saveGame();
 }
 
 // === إدارة التفاعلات ===
@@ -60,6 +110,8 @@ function handleLogin(e) {
   if (!username) return;
   state.user = { name: username, level: 1 };
   addLog(`تسجيل الدخول باسم: ${username}`);
+  playCoinSound();
+  saveGame();
   render();
 }
 
@@ -72,7 +124,6 @@ function upgradeBuilding(buildingId) {
   const b = state.buildings.find(item => item.id === buildingId);
   if (!b) return;
 
-  // التحقق من الموارد
   for (let res in b.cost) {
     if (state.resources[res] < b.cost[res]) {
       showToast("الموارد غير كافية لترقية هذا المبنى!");
@@ -80,14 +131,15 @@ function upgradeBuilding(buildingId) {
     }
   }
 
-  // الخصم والترقية
   for (let res in b.cost) {
     state.resources[res] -= b.cost[res];
     b.cost[res] = Math.round(b.cost[res] * 1.5);
   }
   b.level++;
+  playCoinSound();
   addLog(`تمت ترقية ${b.name} إلى المستوى ${b.level}`);
   showToast(`تمت ترقية ${b.name} بنجاح!`);
+  saveGame();
   render();
 }
 
@@ -106,8 +158,10 @@ function trainTroop(troopId) {
     state.resources[res] -= t.cost[res];
   }
   t.count += 5;
+  playCoinSound();
   addLog(`تم تدريب 5 وحدات من ${t.name}`);
   showToast(`تم تدريب 5 وحدات من ${t.name}`);
+  saveGame();
   render();
 }
 
@@ -132,7 +186,7 @@ function attackCastle(castle) {
     return;
   }
 
-  // محاكاة نتيجة الهجوم
+  playSwordSound();
   const success = Math.random() > 0.4;
   if (success) {
     const goldLoot = Math.floor(Math.random() * 150) + 50;
@@ -143,6 +197,7 @@ function attackCastle(castle) {
     addLog(`هزيمة! تراجعت قواتك أثناء التصدّي لهجوم ${castle.name}.`);
     showToast("تراجعت القوات وخسرت المعركة!");
   }
+  saveGame();
   closeCastleModal();
 }
 
@@ -354,7 +409,21 @@ function render() {
   `;
 }
 
-// تشغيل اللعبة فور تحميل DOM
+// === التشغيل التلقائي والإنتاج (Idle Loop) ===
 document.addEventListener("DOMContentLoaded", () => {
+  loadGame();
   render();
+
+  // الإنتاج التلقائي للموارد كل 10 ثوانٍ بناءً على مستوى المباني
+  setInterval(() => {
+    if (!state.user) return;
+    state.buildings.forEach(b => {
+      if (b.id === 'gold_mine') state.resources.gold += b.level * 2;
+      if (b.id === 'quarry') state.resources.stone += b.level * 2;
+      if (b.id === 'farm') state.resources.food += b.level * 3;
+    });
+    saveGame();
+    // تحديث الشاشة فقط إذا كان اللاعب مسجلاً الدخول
+    render();
+  }, 10000);
 });
