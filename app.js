@@ -14,7 +14,7 @@ const state = {
   // محطة الأقمار الصناعية الفرعونية
   satellites: [
     { id: "horus_sat", name: "قمر حورس (عين الرؤية)", level: 1, cost: { energy: 100, alloy: 50 }, prod: "5 بيانات/10ث" },
-    { id: "obelisk_sat", name: "مسלת الفضاء الكونية", level: 1, cost: { crystals: 80, alloy: 60 }, prod: "8 طاقة/10ث" }
+    { id: "obelisk_sat", name: "مسلة الفضاء الكونية", level: 1, cost: { crystals: 80, alloy: 60 }, prod: "8 طاقة/10ث" }
   ],
   // منصات صواريخ الاستكشاف
   rockets: [
@@ -228,7 +228,6 @@ function launchMission(missionId) {
   } else {
     addLog(`فشلت بعثة ${m.target} بسبب عاصفة نيازك كونية.`);
     showToast("فشلت البعثة وضاع الصاروخ!");
-    // خصم صاروخ عند الفشل
     for (let r of state.rockets) {
       if (r.count > 0) {
         r.count--;
@@ -446,7 +445,6 @@ document.addEventListener("DOMContentLoaded", () => {
   loadGame();
   render();
 
-  // الإنتاج التلقائي للموارد الفضائية كل 10 ثوانٍ
   setInterval(() => {
     if (!state.commander) return;
     const shieldTech = state.techs.find(item => item.id === "quantum_shields")?.level || 0;
@@ -457,7 +455,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (sat.id === 'obelisk_sat') state.resources.energy += Math.round(sat.level * 8 * bonus);
     });
 
-    // توليد سبائك تلقائي تدريجي
     state.resources.alloy += 5;
 
     saveGame();
