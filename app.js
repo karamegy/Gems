@@ -1,113 +1,108 @@
 // === حالة اللعبة الإجمالية (State) ===
 const state = {
-  user: null,
+  commander: null,
   activeTab: "overview",
   toastMessage: null,
   toastTimer: null,
+  // موارد الفضاء الجديدة
   resources: {
-    gold: 500,
-    stone: 300,
-    wood: 200,
-    food: 400
+    energy: 300,    // طاقة شمسية
+    crystals: 150,  // بلورات كونية
+    alloy: 100,     // سبائك معدنية
+    data: 50        // بيانات علمية
   },
-  castles: [
-    { id: 1, name: "قلعة خوفو العظمى", owner: "لاعب 1", isMine: true, x: 48, y: 35, level: 3, hp: 1000 },
-    { id: 2, name: "حصن الفرعون", owner: "رمسيس", isMine: false, x: 30, y: 50, level: 2, hp: 600 },
-    { id: 3, name: "معسكر الواحة", owner: "مجهول", isMine: false, x: 70, y: 65, level: 1, hp: 300 }
+  // محطة الأقمار الصناعية الفرعونية
+  satellites: [
+    { id: "horus_sat", name: "قمر حورس (عين الرؤية)", level: 1, cost: { energy: 100, alloy: 50 }, prod: "5 بيانات/10ث" },
+    { id: "obelisk_sat", name: "مسלת الفضاء الكونية", level: 1, cost: { crystals: 80, alloy: 60 }, prod: "8 طاقة/10ث" }
   ],
-  buildings: [
-    { id: "gold_mine", name: "منجم الذهب", level: 1, cost: { gold: 100, stone: 50 }, prod: "10 ذهب/ساعة" },
-    { id: "quarry", name: "محجر المحاجر", level: 1, cost: { gold: 50, stone: 100 }, prod: "15 حجارة/ساعة" },
-    { id: "farm", name: "مزارع النيل", level: 2, cost: { gold: 80, wood: 60 }, prod: "20 طعام/ساعة" }
+  // منصات صواريخ الاستكشاف
+  rockets: [
+    { id: "amun_1", name: "صاروخ أمون-1", count: 2, cost: { energy: 150, alloy: 100 } },
+    { id: "ra_express", name: "مركبة رع السريعة", count: 0, cost: { crystals: 120, alloy: 150 } }
   ],
-  troops: [
-    { id: "archers", name: "رماة السهام", count: 25, cost: { gold: 20, food: 10 } },
-    { id: "spearmen", name: "مشاة الرماح", count: 40, cost: { gold: 15, food: 15 } },
-    { id: "chariots", name: "المركبات الحربية", count: 5, cost: { gold: 100, wood: 50 } }
+  // معمل أبحاث الكون
+  techs: [
+    { id: "quantum_shields", name: "دروع طاقة أوزوريس", level: 0, maxLevel: 3, cost: { data: 40, crystals: 50 }, desc: "تزيد كفاءة جمع الموارد الفضائية بنسبة 25%." },
+    { id: "ion_drive", name: "محركات الدفع الأيوني", level: 0, maxLevel: 3, cost: { data: 60, alloy: 80 }, desc: "تضاعف نجاح البعثات الفضائية بنسبة 20%." }
   ],
-  research: [
-    { id: "iron_weapons", name: "أسلحة حديدية", level: 0, maxLevel: 3, cost: { gold: 150, stone: 80 }, desc: "تزيد كفاءة وقوة الجيش بنسبة 15% لكل مستوى." },
-    { id: "pharaoh_mining", name: "تعدين الأهرامات", level: 0, maxLevel: 3, cost: { gold: 120, wood: 60 }, desc: "تزيد إنتاج الموارد التلقائي بنسبة 20% لكل مستوى." }
+  // بعثات الكواكب الفضائية
+  missions: [
+    { id: "moon", name: "استكشاف القمر الهلالي", target: "قمر الأرض", reward: { crystals: 100, data: 30 }, successRate: 85, active: false },
+    { id: "mars", name: "رحلة كوكب المريخ الأحمر", target: "المريخ", reward: { crystals: 250, data: 90 }, successRate: 60, active: false },
+    { id: "deep_space", name: "بوابة سديم أوريون", target: "الفضاء السحيق", reward: { crystals: 600, data: 200 }, successRate: 35, active: false }
   ],
-  quests: [
-    { id: "train_5", title: "تدريب الجنود", desc: "قم بتدريب 5 وحدات عسكرية جديدة", target: 5, progress: 0, reward: { gold: 100 }, completed: false },
-    { id: "upgrade_b", title: "تطوير المباني", desc: "قم بترقية أي مبنى في المملكة", target: 1, progress: 0, reward: { stone: 80 }, completed: false }
-  ],
-  activeEvent: { title: "فيضان النيل المبارك 🌊", desc: "يزيد إنتاج المزارع والموارد بنسبة مضاعفة مؤقتاً!" },
   logs: [
-    "مرحباً بك في قلاع الجيزة!",
-    "تم تأسيس مملكتك بنجاح قرب نهر النيل."
-  ],
-  selectedCastle: null
+    "مرحباً بك يا قائد المحطة في مركز الفضاء المصري الجديد.",
+    "تم تفعيل أنظمة الملاحة الكونية بنجاح."
+  ]
 };
 
-// === LocalStorage (حفظ واسترجاع التقدم) ===
+// === LocalStorage ===
 function saveGame() {
-  localStorage.setItem('giza_castles_state', JSON.stringify(state));
+  localStorage.setItem('pharaonic_space_state', JSON.stringify(state));
 }
 
 function loadGame() {
-  const saved = localStorage.getItem('giza_castles_state');
+  const saved = localStorage.getItem('pharaonic_space_state');
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
       Object.assign(state, parsed);
     } catch (e) {
-      console.error("خطأ في استرجاع البيانات المحفوظة", e);
+      console.error("خطأ في استرجاع بيانات الفضاء", e);
     }
   }
 }
 
-// === Web Audio API (تهيئة آمنة ومؤجلة لمنع توقف الجوال) ===
+// === أصوات تفاعلية عبر Web Audio API ===
 let audioCtx = null;
 function getAudioContext() {
   if (!audioCtx) {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (AudioContextClass) audioCtx = new AudioContextClass();
   }
-  if (audioCtx && audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
 
-function playCoinSound() {
+function playLaserSound() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(1000, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.12);
+  } catch (e) {}
+}
+
+function playRocketSound() {
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(800, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+    osc.frequency.setValueAtTime(150, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(500, ctx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start();
-    osc.stop(ctx.currentTime + 0.1);
+    osc.stop(ctx.currentTime + 0.3);
   } catch (e) {}
 }
 
-function playSwordSound() {
-  try {
-    const ctx = getAudioContext();
-    if (!ctx) return;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(200, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.15);
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.15);
-  } catch (e) {}
-}
-
-// === الوظائف المساعدة ===
+// === الوظائف العامة ===
 function showToast(msg) {
   state.toastMessage = msg;
   render();
@@ -124,14 +119,14 @@ function addLog(text) {
   saveGame();
 }
 
-// === إدارة التفاعلات والأبحاث والمهام ===
+// === التفاعلات والتحكم ===
 function handleLogin(e) {
   e.preventDefault();
-  const username = e.target.username.value.trim();
-  if (!username) return;
-  state.user = { name: username, level: 1 };
-  addLog(`تسجيل الدخول باسم: ${username}`);
-  playCoinSound();
+  const name = e.target.commanderName.value.trim();
+  if (!name) return;
+  state.commander = { name: name, rank: "قائد مركبة أول" };
+  playLaserSound();
+  addLog(`استلام القيادة بواسطة القائد: ${name}`);
   saveGame();
   render();
 }
@@ -141,157 +136,124 @@ function switchTab(tab) {
   render();
 }
 
-function upgradeBuilding(buildingId) {
-  const b = state.buildings.find(item => item.id === buildingId);
-  if (!b) return;
+function upgradeSatellite(satId) {
+  const sat = state.satellites.find(s => s.id === satId);
+  if (!sat) return;
 
-  for (let res in b.cost) {
-    if (state.resources[res] < b.cost[res]) {
-      showToast("الموارد غير كافية لترقية هذا المبنى!");
+  for (let res in sat.cost) {
+    if (state.resources[res] < sat.cost[res]) {
+      showToast("الموارد الفضائية غير كافية!");
       return;
     }
   }
 
-  for (let res in b.cost) {
-    state.resources[res] -= b.cost[res];
-    b.cost[res] = Math.round(b.cost[res] * 1.5);
+  for (let res in sat.cost) {
+    state.resources[res] -= sat.cost[res];
+    sat.cost[res] = Math.round(sat.cost[res] * 1.6);
   }
-  b.level++;
-  
-  const q = state.quests.find(item => item.id === "upgrade_b");
-  if (q && !q.completed) {
-    q.progress = Math.min(q.target, q.progress + 1);
-    if (q.progress >= q.target) q.completed = true;
-  }
-
-  playCoinSound();
-  addLog(`تمت ترقية ${b.name} إلى المستوى ${b.level}`);
-  showToast(`تمت ترقية ${b.name} بنجاح!`);
+  sat.level++;
+  playLaserSound();
+  addLog(`تم تطوير ${sat.name} إلى المستوى ${sat.level}`);
+  showToast(`تمت ترقية القمر الصناعي بنجاح!`);
   saveGame();
   render();
 }
 
-function trainTroop(troopId) {
-  const t = state.troops.find(item => item.id === troopId);
-  if (!t) return;
-
-  for (let res in t.cost) {
-    if (state.resources[res] < t.cost[res]) {
-      showToast("لا توجد موارد كافية للتدريب!");
-      return;
-    }
-  }
-
-  for (let res in t.cost) {
-    state.resources[res] -= t.cost[res];
-  }
-  t.count += 5;
-
-  const q = state.quests.find(item => item.id === "train_5");
-  if (q && !q.completed) {
-    q.progress = Math.min(q.target, q.progress + 5);
-    if (q.progress >= q.target) q.completed = true;
-  }
-
-  playCoinSound();
-  addLog(`تم تدريب 5 وحدات من ${t.name}`);
-  showToast(`تم تدريب 5 وحدات من ${t.name}`);
-  saveGame();
-  render();
-}
-
-function researchTech(techId) {
-  const r = state.research.find(item => item.id === techId);
-  if (!r || r.level >= r.maxLevel) return;
+function buildRocket(rocketId) {
+  const r = state.rockets.find(item => item.id === rocketId);
+  if (!r) return;
 
   for (let res in r.cost) {
     if (state.resources[res] < r.cost[res]) {
-      showToast("الموارد غير كافية لإجراء هذا البحث!");
+      showToast("الموارد غير كافية لتصنيع الصاروخ!");
       return;
     }
   }
 
   for (let res in r.cost) {
     state.resources[res] -= r.cost[res];
-    r.cost[res] = Math.round(r.cost[res] * 1.6);
   }
-  r.level++;
-  playCoinSound();
-  addLog(`تم إتمام بحث ${r.name} (المستوى ${r.level})`);
-  showToast(`تم تطوير بحث ${r.name} بنجاح!`);
+  r.count++;
+  playRocketSound();
+  addLog(`تم بناء صاروخ استكشافي جديد: ${r.name}`);
+  showToast(`تم إطلاق صاروخ جديد للمنصة!`);
   saveGame();
   render();
 }
 
-function claimQuestReward(questId) {
-  const q = state.quests.find(item => item.id === questId);
-  if (!q || !q.completed || q.claimed) return;
+function researchTech(techId) {
+  const t = state.techs.find(item => item.id === techId);
+  if (!t || t.level >= t.maxLevel) return;
 
-  q.claimed = true;
-  for (let res in q.reward) {
-    state.resources[res] = (state.resources[res] || 0) + q.reward[res];
+  for (let res in t.cost) {
+    if (state.resources[res] < t.cost[res]) {
+      showToast("بيانات أو موارد البحث غير كافية!");
+      return;
+    }
   }
-  playCoinSound();
-  addLog(`تم استلام مكافأة المهمة: ${q.title}`);
-  showToast("تم استلام المكافأة بنجاح!");
+
+  for (let res in t.cost) {
+    state.resources[res] -= t.cost[res];
+    t.cost[res] = Math.round(t.cost[res] * 1.7);
+  }
+  t.level++;
+  playLaserSound();
+  addLog(`تم ابتكار تكنولوجيا جديدة: ${t.name} (مستوى ${t.level})`);
+  showToast("تم تطوير التكنولوجيا بنجاح!");
   saveGame();
   render();
 }
 
-function openCastleModal(castle) {
-  state.selectedCastle = castle;
-  render();
-}
+function launchMission(missionId) {
+  const m = state.missions.find(item => item.id === missionId);
+  if (!m) return;
 
-function closeCastleModal() {
-  state.selectedCastle = null;
-  render();
-}
-
-function attackCastle(castle) {
-  if (castle.isMine) {
-    showToast("لا يمكنك هجوم قلعتك الخاصة!");
-    return;
-  }
-  const totalTroops = state.troops.reduce((acc, curr) => acc + curr.count, 0);
-  if (totalTroops < 10) {
-    showToast("جيشك ضعيف جداً! درب المزيد من الجنود.");
+  const totalRockets = state.rockets.reduce((acc, curr) => acc + curr.count, 0);
+  if (totalRockets <= 0) {
+    showToast("لا توجد صواريخ جاهزة للإطلاق! اصنع صواريخ أولاً.");
     return;
   }
 
-  playSwordSound();
-  const weaponTech = state.research.find(item => item.id === "iron_weapons")?.level || 0;
-  const success = Math.random() > (0.4 - (weaponTech * 0.05));
+  playRocketSound();
+  const ionTech = state.techs.find(item => item.id === "ion_drive")?.level || 0;
+  const currentSuccess = Math.min(95, m.successRate + (ionTech * 12));
+  const success = Math.random() * 100 <= currentSuccess;
 
   if (success) {
-    const goldLoot = Math.floor(Math.random() * 150) + 50 + (weaponTech * 20);
-    state.resources.gold += goldLoot;
-    addLog(`انتصار! تمت الإغارة على ${castle.name} ونهب ${goldLoot} ذهب.`);
-    showToast(`انتصار عظيم! غنمت ${goldLoot} ذهب.`);
+    for (let res in m.reward) {
+      state.resources[res] = (state.resources[res] || 0) + m.reward[res];
+    }
+    addLog(`نجاح البعثة! تم استكشاف ${m.target} وجمع غنائم كونية.`);
+    showToast(`نجح الإطلاق! تم جلب موارد جديدة.`);
   } else {
-    addLog(`هزيمة! تراجعت قواتك أثناء التصدّي لهجوم ${castle.name}.`);
-    showToast("تراجعت القوات وخسرت المعركة!");
+    addLog(`فشلت بعثة ${m.target} بسبب عاصفة نيازك كونية.`);
+    showToast("فشلت البعثة وضاع الصاروخ!");
+    // خصم صاروخ عند الفشل
+    for (let r of state.rockets) {
+      if (r.count > 0) {
+        r.count--;
+        break;
+      }
+    }
   }
   saveGame();
-  closeCastleModal();
+  render();
 }
 
-// === مكونات الواجهة (Render Engine) ===
+// === مكونات واجهة المستخدم (Views) ===
 function renderAuth() {
   return `
     <div class="auth-wrap">
       <div class="auth-card">
-        <div class="auth-crest">
-          <div class="pyramids">𓋹 𓏤 𓀀</div>
-        </div>
-        <h1>قلاع الجيزة</h1>
-        <p class="sub">ابنِ إمبراطوريتك واحمِ أهراماتك</p>
+        <div class="space-emblem">🌌 𓂀 🚀</div>
+        <h1>محطة الفضاء الفرعونية</h1>
+        <p class="sub">اغزُ الفضاء بأسرار أجدادك الفراعنة</p>
         <form onsubmit="handleLogin(event)">
           <div class="field">
-            <label>اسم الحاكم / القائد</label>
-            <input type="text" name="username" placeholder="أدخل اسمك هنا..." required autocomplete="off" />
+            <label>اسم القائد / الباحث الفضائي</label>
+            <input type="text" name="commanderName" placeholder="أدخل اسمك هنا..." required autocomplete="off" />
           </div>
-          <button type="submit" class="btn btn-gold btn-full">دخول اللعبة ⚔️</button>
+          <button type="submit" class="btn btn-cyber btn-full">دخول غرفة القيادة 🚀</button>
         </form>
       </div>
     </div>
@@ -301,16 +263,15 @@ function renderAuth() {
 function renderTopbar() {
   return `
     <div class="topbar">
-      <div class="brand">🏰 قلاع الجيزة</div>
+      <div class="brand">🛰️ الفضاء الفرعوني</div>
       <div class="resources">
-        <div class="res"><span class="ico">🪙</span> ${state.resources.gold} <span class="cap">ذهب</span></div>
-        <div class="res"><span class="ico">🪨</span> ${state.resources.stone} <span class="cap">حجر</span></div>
-        <div class="res"><span class="ico">🪵</span> ${state.resources.wood} <span class="cap">خشب</span></div>
-        <div class="res"><span class="ico">🌾</span> ${state.resources.food} <span class="cap">طعام</span></div>
+        <div class="res"><span class="ico">⚡</span> ${state.resources.energy} <span class="cap">طاقة</span></div>
+        <div class="res"><span class="ico">💎</span> ${state.resources.crystals} <span class="cap">بلورات</span></div>
+        <div class="res"><span class="ico">🛡️</span> ${state.resources.alloy} <span class="cap">سبائك</span></div>
+        <div class="res"><span class="ico">📜</span> ${state.resources.data} <span class="cap">بيانات</span></div>
       </div>
       <div class="player-chip">
-        <span>👤 ${state.user.name}</span>
-        <span class="lvl">مستوى ${state.user.level}</span>
+        <span>👨‍🚀 ${state.commander.name}</span>
       </div>
     </div>
   `;
@@ -318,12 +279,11 @@ function renderTopbar() {
 
 function renderNav() {
   const tabs = [
-    { id: "overview", label: "🏛️ نظرة عامة" },
-    { id: "map", label: "🗺️ الخريطة" },
-    { id: "buildings", label: "🏗️ المنشآت" },
-    { id: "army", label: "⚔️ الجيش" },
-    { id: "research", label: "📜 الأبحاث" },
-    { id: "quests", label: "🎯 المهام" }
+    { id: "overview", label: "🔭 المركز الرئيسي" },
+    { id: "satellites", label: "🛰️ الأقمار الصناعية" },
+    { id: "rockets", label: "🚀 منصة الصواريخ" },
+    { id: "missions", label: "🌌 البعثات الكونية" },
+    { id: "tech", label: "🔬 معمل الأبحاث" }
   ];
 
   return `
@@ -339,28 +299,23 @@ function renderNav() {
 
 function renderOverview() {
   return `
-    <div class="event-banner" style="background: rgba(26, 107, 122, 0.3); border: 1px solid var(--turquoise); padding: 10px; border-radius: 8px; margin-bottom: 12px;">
-      <h3 style="color: var(--turquoise); margin-bottom: 4px;">${state.activeEvent.title}</h3>
-      <p style="font-size: 13px; color: var(--papyrus);">${state.activeEvent.desc}</p>
-    </div>
     <div class="panel">
-      <h2>مرحباً بك يا الملك ${state.user.name}</h2>
-      <p class="muted">أهلاً بك في العصر الفرعوني العظيم. تفقد مملكتك وإحصائيات القلاع المجاورة.</p>
+      <h2>مرحباً بك مجدداً يا قائد ${state.commander.name}</h2>
+      <p class="muted">المحطة تعمل بكفاءة تامة. تابع تقارير الرادار وأحدث سجلات الطاقم.</p>
     </div>
     <div class="grid-2">
       <div class="panel">
-        <h3>📜 آخر التحديثات والأحداث</h3>
+        <h3>📡 السجلات الحية لغرفة القيادة</h3>
         <div class="log">
           ${state.logs.map(log => `<div>${log}</div>`).join('')}
         </div>
       </div>
       <div class="panel">
-        <h3>📊 حالة الجاهزية العسكرية</h3>
-        <p class="muted" style="margin-bottom: 12px;">إجمالي القوات المجهزة للقتال:</p>
-        ${state.troops.map(t => `
+        <h3>🚀 أسطول الصواريخ الجاهزة</h3>
+        ${state.rockets.map(r => `
           <div class="stat-row">
-            <span>${t.name}</span>
-            <span class="badge badge-gold">${t.count} جندي</span>
+            <span>${r.name}</span>
+            <span class="badge badge-cyber">${r.count} مركبة</span>
           </div>
         `).join('')}
       </div>
@@ -368,85 +323,40 @@ function renderOverview() {
   `;
 }
 
-function renderMap() {
-  return `
-    <div class="map-wrap">
-      <div class="map-canvas">
-        <div class="pyramid khufu"></div>
-        <div class="pyramid khafre"></div>
-        <div class="pyramid menkaure"></div>
-        <div class="sphinx">🦁</div>
-        <div class="nile-river"></div>
-
-        ${state.castles.map(c => `
-          <div class="castle-pin ${c.isMine ? 'mine' : ''}" style="left: ${c.x}%; top: ${c.y}\%;" onclick='openCastleModal(${JSON.stringify(c)})'>
-            <div class="icon">${c.isMine ? '🏰' : '🏯'}</div>
-            <div class="name">${c.name}</div>
-          </div>
-        `).join('')}
-      </div>
-      <div class="map-legend">
-        <span>🏰 قلعتك</span> | <span>🏯 القلاع المجاورة</span>
-      </div>
-    </div>
-  `;
-}
-
-function renderBuildings() {
+function renderSatellites() {
   return `
     <div class="panel">
-      <h2>مباني المملكة</h2>
-      <p class="muted">قم بزيادة الإنتاج لجمع المزيد من الموارد لبناء جيش أعتى.</p>
-    </div>
-    <div class="grid-3">
-      ${state.buildings.map(b => `
-        <div class="card">
-          <div class="title">${b.name}</div>
-          <div class="meta">المستوى الحالي: <strong>${b.level}</strong></div>
-          <div class="meta">الإنتاج: ${b.prod}</div>
-          <button class="btn btn-gold btn-full btn-sm" onclick="upgradeBuilding('${b.id}')">
-            ترقية (🪙 ${b.cost.gold || 0} | 🪨 ${b.cost.stone \vert{}\vert{} 0} \vert{} 🪵 ${b.cost.wood || 0})
-          </button>
-        </div>
-      `).join('')}
-    </div>
-  `;
-}
-
-function renderArmy() {
-  return `
-    <div class="panel">
-      <h2>المعسكر العسكري</h2>
-      <p class="muted">قم بتدريب الجيش للدفاع عن قلاعك والسيطرة على أراضي الجيزة.</p>
-    </div>
-    <div class="grid-3">
-      ${state.troops.map(t => `
-        <div class="card">
-          <div class="title">${t.name}</div>
-          <div class="meta">العدد المتوفر: <strong>${t.count}</strong></div>
-          <button class="btn btn-blood btn-full btn-sm" onclick="trainTroop('${t.id}')">
-            تدريب +5 (🪙 ${t.cost.gold \vert{}\vert{} 0} \vert{} 🌾 ${t.cost.food || 0})
-          </button>
-        </div>
-      `).join('')}
-    </div>
-  `;
-}
-
-function renderResearch() {
-  return `
-    <div class="panel">
-      <h2>📜 شجرة الأبحاث الفرعونية</h2>
-      <p class="muted">قم بتطوير العلوم لتكتسب مزايا استراتيجية هائلة.</p>
+      <h2>🛰️ شبكة الأقمار الصناعية الفرعونية</h2>
+      <p class="muted">طور الأقمار لجمع الطاقة والبيانات الكونية تلقائياً.</p>
     </div>
     <div class="grid-2">
-      ${state.research.map(r => `
+      ${state.satellites.map(sat => `
+        <div class="card">
+          <div class="title">${sat.name}</div>
+          <div class="meta">المستوى الحالي: <strong>${sat.level}</strong></div>
+          <div class="meta">الإنتاج: ${sat.prod}</div>
+          <button class="btn btn-cyber btn-full btn-sm" onclick="upgradeSatellite('${sat.id}')">
+            ترقية (⚡ ${sat.cost.energy || 0} | 💎 ${sat.cost.crystals \vert{}\vert{} 0} \vert{} 🛡️ ${sat.cost.alloy || 0})
+          </button>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderRockets() {
+  return `
+    <div class="panel">
+      <h2>🚀 منصة تصنيع وإطلاق الصواريخ</h2>
+      <p class="muted">اصنع المزيد من الصواريخ لضمان نجاح الرحلات الاستكشافية الكونية.</p>
+    </div>
+    <div class="grid-2">
+      ${state.rockets.map(r => `
         <div class="card">
           <div class="title">${r.name}</div>
-          <div class="meta">المستوى الحالي: <strong>${r.level} /${r.maxLevel}</strong></div>
-          <div class="meta">${r.desc}</div>
-          <button class="btn btn-nile btn-full btn-sm" onclick="researchTech('${r.id}')" ${r.level >= r.maxLevel ? 'disabled' : ''}>
-            ${r.level >= r.maxLevel ? 'مكتمل بالكامل' : `تطوير (🪙 ${r.cost.gold || 0} | 🪨 ${r.cost.stone || 0} | 🪵 ${r.cost.wood || 0})`}
+          <div class="meta">المتوفر في الهناغز: <strong>${r.count}</strong></div>
+          <button class="btn btn-gold btn-full btn-sm" onclick="buildRocket('${r.id}')">
+            تصنيع صاروخ (⚡ ${r.cost.energy || 0} | 💎 ${r.cost.crystals \vert{}\vert{} 0} \vert{} 🛡️ ${r.cost.alloy || 0})
           </button>
         </div>
       `).join('')}
@@ -454,48 +364,44 @@ function renderResearch() {
   `;
 }
 
-function renderQuests() {
+function renderMissions() {
   return `
     <div class="panel">
-      <h2>🎯 المهام اليومية</h2>
-      <p class="muted">أنجز المهام التالية لتحصل على مكافآت قيمة!</p>
+      <h2>🌌 بعثات الفضاء العميق والكواكب</h2>
+      <p class="muted">اختر الكوكب المستهدف وأرسل الصواريخ لجمع الثروات الكونية.</p>
     </div>
-    <div class="grid-2">
-      ${state.quests.map(q => `
+    <div class="grid-3">
+      ${state.missions.map(m => `
         <div class="card">
-          <div class="title">${q.title}</div>
-          <div class="meta">${q.desc}</div>
-          <div class="meta">التقدم: <strong>${q.progress} / ${q.target}</strong></div>${q.completed && !q.claimed ? `
-            <button class="btn btn-gold btn-full btn-sm" onclick="claimQuestReward('${q.id}')">استلام المكافأة 🎁</button>
-          ` : q.claimed ? `
-            <span class="badge badge-oasis">تم الاستلام ✅</span>
-          ` : `
-            <span class="muted">قيد التنفيذ...</span>
-          `}
+          <div class="title">${m.name}</div>
+          <div class="meta">الهدف: <strong>${m.target}</strong></div>
+          <div class="meta">نسبة النجاح الأساسية: <strong>${m.successRate}%</strong></div>
+          <button class="btn btn-cyber btn-full btn-sm" onclick="launchMission('${m.id}')">
+            إطلاق البعثة 🚀
+          </button>
         </div>
       `).join('')}
     </div>
   `;
 }
 
-function renderModal() {
-  if (!state.selectedCastle) return '';
-  const c = state.selectedCastle;
+function renderTech() {
   return `
-    <div class="overlay" onclick="closeCastleModal()">
-      <div class="modal" onclick="event.stopPropagation()">
-        <h2>${c.name}</h2>
-        <div class="stat-row"><span>المالك:</span> <strong>${c.owner}</strong></div>
-        <div class="stat-row"><span>المستوى:</span> <strong>${c.level}</strong></div>
-        <div class="stat-row"><span>الصلابة (HP):</span> <strong>${c.hp}</strong></div>
-        <div class="gap"></div>
-        <div class="row">
-          ${c.isMine 
-            ? `<button class="btn btn-oasis btn-full" onclick="showToast('القلعة بحالة جيدة!')">إدارة القلعة</button>`
-            : `<button class="btn btn-blood btn-full" onclick='attackCastle(${JSON.stringify(c)})'>شن هجوم ⚔️</button>`
-          }
+    <div class="panel">
+      <h2>🔬 معمل التكنولوجيا المتقدمة</h2>
+      <p class="muted">استثمر البيانات العلمية لتقوية أبحاث المحطة الفضائية.</p>
+    </div>
+    <div class="grid-2">
+      ${state.techs.map(t => `
+        <div class="card">
+          <div class="title">${t.name}</div>
+          <div class="meta">المستوى: <strong>${t.level} /${t.maxLevel}</strong></div>
+          <div class="meta">${t.desc}</div>
+          <button class="btn btn-cyber btn-full btn-sm" onclick="researchTech('${t.id}')" ${t.level >= t.maxLevel ? 'disabled' : ''}>
+            ${t.level >= t.maxLevel ? 'مكتمل بالكامل' : `بحث (📜 ${t.cost.data || 0} | 💎 ${t.cost.crystals || 0} | 🛡️ ${t.cost.alloy || 0})`}
+          </button>
         </div>
-      </div>
+      `).join('')}
     </div>
   `;
 }
@@ -505,12 +411,12 @@ function renderToast() {
   return `<div class="toast">${state.toastMessage}</div>`;
 }
 
-// === الدالة الرئيسية للرسم (Main Render Loop) ===
+// === دورة الرسم الرئيسية (Main Loop) ===
 function render() {
   const app = document.getElementById("app");
   if (!app) return;
 
-  if (!state.user) {
+  if (!state.commander) {
     app.innerHTML = renderAuth();
     return;
   }
@@ -518,11 +424,10 @@ function render() {
   let mainContent = "";
   switch (state.activeTab) {
     case "overview": mainContent = renderOverview(); break;
-    case "map": mainContent = renderMap(); break;
-    case "buildings": mainContent = renderBuildings(); break;
-    case "army": mainContent = renderArmy(); break;
-    case "research": mainContent = renderResearch(); break;
-    case "quests": mainContent = renderQuests(); break;
+    case "satellites": mainContent = renderSatellites(); break;
+    case "rockets": mainContent = renderRockets(); break;
+    case "missions": mainContent = renderMissions(); break;
+    case "tech": mainContent = renderTech(); break;
     default: mainContent = renderOverview();
   }
 
@@ -532,7 +437,6 @@ function render() {
     <div class="main">
       ${mainContent}
     </div>
-    ${renderModal()}
     ${renderToast()}
   `;
 }
@@ -542,16 +446,20 @@ document.addEventListener("DOMContentLoaded", () => {
   loadGame();
   render();
 
+  // الإنتاج التلقائي للموارد الفضائية كل 10 ثوانٍ
   setInterval(() => {
-    if (!state.user) return;
-    const miningTech = state.research.find(item => item.id === "pharaoh_mining")?.level || 0;
-    const bonusMultiplier = 1 + (miningTech * 0.2);
+    if (!state.commander) return;
+    const shieldTech = state.techs.find(item => item.id === "quantum_shields")?.level || 0;
+    const bonus = 1 + (shieldTech * 0.25);
 
-    state.buildings.forEach(b => {
-      if (b.id === 'gold_mine') state.resources.gold += Math.round(b.level * 2 * bonusMultiplier);
-      if (b.id === 'quarry') state.resources.stone += Math.round(b.level * 2 * bonusMultiplier);
-      if (b.id === 'farm') state.resources.food += Math.round(b.level * 3 * bonusMultiplier);
+    state.satellites.forEach(sat => {
+      if (sat.id === 'horus_sat') state.resources.data += Math.round(sat.level * 5 * bonus);
+      if (sat.id === 'obelisk_sat') state.resources.energy += Math.round(sat.level * 8 * bonus);
     });
+
+    // توليد سبائك تلقائي تدريجي
+    state.resources.alloy += 5;
+
     saveGame();
     render();
   }, 10000);
