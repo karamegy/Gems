@@ -148,6 +148,10 @@ html, body {
   color: #1a1208;
   box-shadow: 0 4px 16px rgba(212, 175, 55, 0.35);
 }
+.btn-nile {
+  background: linear-gradient(180deg, #2a8a9a, #0d3d4a);
+  color: #fff;
+}
 .btn-blood {
   background: linear-gradient(180deg, #b33a22, #6a1e12);
   color: #fff;
@@ -445,6 +449,7 @@ html, body {
   font-weight: 800;
 }
 .badge-gold { background: var(--gold); color: var(--night); }
+.badge-oasis { background: var(--oasis); color: #fff; }
 
 .log {
   max-height: 180px;
