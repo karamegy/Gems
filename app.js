@@ -197,12 +197,12 @@ function launchMission(missionId) {
     return;
   }
   playRocketSound();
-  const ionTech = state.techs.find(item => item.id === "ion_drive")?.level || 0;
+  const ionTech = state.techs.find(item => item.id === "ion_drive") ? state.techs.find(item => item.id === "ion_drive").level : 0;
   const currentSuccess = Math.min(95, m.successRate + (ionTech * 12));
   const success = Math.random() * 100 <= currentSuccess;
   if (success) {
     for (let res in m.reward) {
-      state.resources[res] = (state.resources[res] || 0) + m.reward[res];
+      state.resources[res] = (state.resources[res] ? state.resources[res] : 0) + m.reward[res];
     }
     addLog(`نجاح البعثة! تم استكشاف ${m.target} وجمع غنائم كونية.`);
     showToast("نجح الإطلاق! تم جلب موارد جديدة.");
@@ -314,7 +314,7 @@ function renderSatellites() {
           <div class="meta">المستوى الحالي: <strong>${sat.level}</strong></div>
           <div class="meta">الإنتاج: ${sat.prod}</div>
           <button class="btn btn-cyber btn-full btn-sm" onclick="upgradeSatellite('${sat.id}')">
-            ترقية (⚡ ${sat.cost.energy || 0} | 💎 ${sat.cost.crystals \vert{}\vert{} 0} \vert{} 🛡️ ${sat.cost.alloy || 0})
+            ترقية (⚡ ${sat.cost.energy ? sat.cost.energy : 0} - 💎 ${sat.cost.crystals ? sat.cost.crystals : 0} - 🛡️ ${sat.cost.alloy ? sat.cost.alloy : 0})
           </button>
         </div>
       `).join('')}
@@ -334,7 +334,7 @@ function renderRockets() {
           <div class="title">${r.name}</div>
           <div class="meta">المتوفر في الهناغز: <strong>${r.count}</strong></div>
           <button class="btn btn-gold btn-full btn-sm" onclick="buildRocket('${r.id}')">
-            تصنيع صاروخ (⚡ ${r.cost.energy || 0} | 💎 ${r.cost.crystals \vert{}\vert{} 0} \vert{} 🛡️ ${r.cost.alloy || 0})
+            تصنيع صاروخ (⚡ ${r.cost.energy ? r.cost.energy : 0} - 💎 ${r.cost.crystals ? r.cost.crystals : 0} - 🛡️ ${r.cost.alloy ? r.cost.alloy : 0})
           </button>
         </div>
       `).join('')}
@@ -376,7 +376,7 @@ function renderTech() {
           <div class="meta">المستوى: <strong>${t.level} /${t.maxLevel}</strong></div>
           <div class="meta">${t.desc}</div>
           <button class="btn btn-cyber btn-full btn-sm" onclick="researchTech('${t.id}')" ${t.level >= t.maxLevel ? 'disabled' : ''}>
-            ${t.level >= t.maxLevel ? 'مكتمل بالكامل' : `بحث (📜 ${t.cost.data || 0} | 💎 ${t.cost.crystals || 0} | 🛡️ ${t.cost.alloy || 0})`}
+            ${t.level >= t.maxLevel ? 'مكتمل بالكامل' : `بحث (📜 ${t.cost.data ? t.cost.data : 0} - 💎 ${t.cost.crystals ? t.cost.crystals : 0} - 🛡️ ${t.cost.alloy ? t.cost.alloy : 0})`}
           </button>
         </div>
       `).join('')}
@@ -420,7 +420,8 @@ document.addEventListener("DOMContentLoaded", () => {
   render();
   setInterval(() => {
     if (!state.commander) return;
-    const shieldTech = state.techs.find(item => item.id === "quantum_shields")?.level || 0;
+    const shieldObj = state.techs.find(item => item.id === "quantum_shields");
+    const shieldTech = shieldObj ? shieldObj.level : 0;
     const bonus = 1 + (shieldTech * 0.25);
     state.satellites.forEach(sat => {
       if (sat.id === 'horus_sat') state.resources.data += Math.round(sat.level * 5 * bonus);
