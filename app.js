@@ -25,6 +25,17 @@ const state = {
     { id: "spearmen", name: "مشاة الرماح", count: 40, cost: { gold: 15, food: 15 } },
     { id: "chariots", name: "المركبات الحربية", count: 5, cost: { gold: 100, wood: 50 } }
   ],
+  // أبحاث المملكة
+  research: [
+    { id: "iron_weapons", name: "أسلحة حديدية", level: 0, maxLevel: 3, cost: { gold: 150, stone: 80 }, desc: "تزيد كفاءة وقوة الجيش بنسبة 15% لكل مستوى." },
+    { id: "pharaoh_mining", name: "تعدين الأهرامات", level: 0, maxLevel: 3, cost: { gold: 120, wood: 60 }, desc: "تزيد إنتاج الموارد التلقائي بنسبة 20% لكل مستوى." }
+  ],
+  // المهام اليومية
+  quests: [
+    { id: "train_5", title: "تدريب الجنود", desc: "قم بتدريب 5 وحدات عسكرية جديدة", target: 5, progress: 0, reward: { gold: 100 }, completed: false },
+    { id: "upgrade_b", title: "تطوير المباني", desc: "قم بترقية أي مبنى في المملكة", target: 1, progress: 0, reward: { stone: 80 }, completed: false }
+  ],
+  activeEvent: { title: "فيضان النيل المبارك 🌊", desc: "يزيد إنتاج المزارع والموارد بنسبة مضاعفة مؤقتاً!" },
   logs: [
     "مرحباً بك في قلاع الجيزة!",
     "تم تأسيس مملكتك بنجاح قرب نهر النيل."
@@ -49,7 +60,7 @@ function loadGame() {
   }
 }
 
-// === Web Audio API (مؤثرات صوتية بدون ملفات خارجية) ===
+// === Web Audio API (مؤثرات صوتية) ===
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playCoinSound() {
@@ -103,7 +114,7 @@ function addLog(text) {
   saveGame();
 }
 
-// === إدارة التفاعلات ===
+// === إدارة التفاعلات والأبحاث والمهام ===
 function handleLogin(e) {
   e.preventDefault();
   const username = e.target.username.value.trim();
@@ -136,6 +147,14 @@ function upgradeBuilding(buildingId) {
     b.cost[res] = Math.round(b.cost[res] * 1.5);
   }
   b.level++;
+  
+  // تحديث تقدم مهام تطوير المباني
+  const q = state.quests.find(item => item.id === "upgrade_b");
+  if (q && !q.completed) {
+    q.progress = Math.min(q.target, q.progress + 1);
+    if (q.progress >= q.target) q.completed = true;
+  }
+
   playCoinSound();
   addLog(`تمت ترقية ${b.name} إلى المستوى ${b.level}`);
   showToast(`تمت ترقية ${b.name} بنجاح!`);
@@ -158,9 +177,55 @@ function trainTroop(troopId) {
     state.resources[res] -= t.cost[res];
   }
   t.count += 5;
+
+  // تحديث تقدم مهام تدريب الجنود
+  const q = state.quests.find(item => item.id === "train_5");
+  if (q && !q.completed) {
+    q.progress = Math.min(q.target, q.progress + 5);
+    if (q.progress >= q.target) q.completed = true;
+  }
+
   playCoinSound();
   addLog(`تم تدريب 5 وحدات من ${t.name}`);
   showToast(`تم تدريب 5 وحدات من ${t.name}`);
+  saveGame();
+  render();
+}
+
+function researchTech(techId) {
+  const r = state.research.find(item => item.id === techId);
+  if (!r || r.level >= r.maxLevel) return;
+
+  for (let res in r.cost) {
+    if (state.resources[res] < r.cost[res]) {
+      showToast("الموارد غير كافية لإجراء هذا البحث!");
+      return;
+    }
+  }
+
+  for (let res in r.cost) {
+    state.resources[res] -= r.cost[res];
+    r.cost[res] = Math.round(r.cost[res] * 1.6);
+  }
+  r.level++;
+  playCoinSound();
+  addLog(`تم إتمام بحث ${r.name} (المستوى ${r.level})`);
+  showToast(`تم تطوير بحث ${r.name} بنجاح!`);
+  saveGame();
+  render();
+}
+
+function claimQuestReward(questId) {
+  const q = state.quests.find(item => item.id === questId);
+  if (!q || !q.completed || q.claimed) return;
+
+  q.claimed = true;
+  for (let res in q.reward) {
+    state.resources[res] = (state.resources[res] || 0) + q.reward[res];
+  }
+  playCoinSound();
+  addLog(`تم استلام مكافأة المهمة: ${q.title}`);
+  showToast("تم استلام المكافأة بنجاح!");
   saveGame();
   render();
 }
@@ -187,12 +252,15 @@ function attackCastle(castle) {
   }
 
   playSwordSound();
-  const success = Math.random() > 0.4;
+  // حساب بونص الأبحاث للهجوم
+  const weaponTech = state.research.find(item => item.id === "iron_weapons")?.level || 0;
+  const success = Math.random() > (0.4 - (weaponTech * 0.05));
+
   if (success) {
-    const goldLoot = Math.floor(Math.random() * 150) + 50;
+    const goldLoot = Math.floor(Math.random() * 150) + 50 + (weaponTech * 20);
     state.resources.gold += goldLoot;
     addLog(`انتصار! تمت الإغارة على ${castle.name} ونهب ${goldLoot} ذهب.`);
-    showToast(`انتصار! غنمت ${goldLoot} ذهب.`);
+    showToast(`انتصار عظيم! غنمت ${goldLoot} ذهب.`);
   } else {
     addLog(`هزيمة! تراجعت قواتك أثناء التصدّي لهجوم ${castle.name}.`);
     showToast("تراجعت القوات وخسرت المعركة!");
@@ -246,7 +314,9 @@ function renderNav() {
     { id: "overview", label: "🏛️ نظرة عامة" },
     { id: "map", label: "🗺️ الخريطة" },
     { id: "buildings", label: "🏗️ المنشآت" },
-    { id: "army", label: "⚔️ الجيش" }
+    { id: "army", label: "⚔️ الجيش" },
+    { id: "research", label: "📜 الأبحاث" },
+    { id: "quests", label: "🎯 المهام" }
   ];
 
   return `
@@ -262,6 +332,10 @@ function renderNav() {
 
 function renderOverview() {
   return `
+    <div class="event-banner" style="background: rgba(26, 107, 122, 0.3); border: 1px solid var(--turquoise); padding: 10px; border-radius: 8px; margin-bottom: 12px;">
+      <h3 style="color: var(--turquoise); margin-bottom: 4px;">${state.activeEvent.title}</h3>
+      <p style="font-size: 13px; color: var(--papyrus);">${state.activeEvent.desc}</p>
+    </div>
     <div class="panel">
       <h2>مرحباً بك يا الملك ${state.user.name}</h2>
       <p class="muted">أهلاً بك في العصر الفرعوني العظيم. تفقد مملكتك وإحصائيات القلاع المجاورة.</p>
@@ -352,6 +426,51 @@ function renderArmy() {
   `;
 }
 
+function renderResearch() {
+  return `
+    <div class="panel">
+      <h2>📜 شجرة الأبحاث الفرعونية</h2>
+      <p class="muted">قم بتطوير العلوم لتكتسب مزايا استراتيجية هائلة.</p>
+    </div>
+    <div class="grid-2">
+      ${state.research.map(r => `
+        <div class="card">
+          <div class="title">${r.name}</div>
+          <div class="meta">المستوى الحالي: <strong>${r.level} /${r.maxLevel}</strong></div>
+          <div class="meta">${r.desc}</div>
+          <button class="btn btn-nile btn-full btn-sm" onclick="researchTech('${r.id}')" ${r.level >= r.maxLevel ? 'disabled' : ''}>
+            ${r.level >= r.maxLevel ? 'مكتمل بالكامل' : `تطوير (🪙 ${r.cost.gold || 0} | 🪨 ${r.cost.stone || 0} | 🪵 ${r.cost.wood || 0})`}
+          </button>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderQuests() {
+  return `
+    <div class="panel">
+      <h2>🎯 المهام اليومية</h2>
+      <p class="muted">أنجز المهام التالية لتحصل على مكافآت قيمة!</p>
+    </div>
+    <div class="grid-2">
+      ${state.quests.map(q => `
+        <div class="card">
+          <div class="title">${q.title}</div>
+          <div class="meta">${q.desc}</div>
+          <div class="meta">التقدم: <strong>${q.progress} / ${q.target}</strong></div>${q.completed && !q.claimed ? `
+            <button class="btn btn-gold btn-full btn-sm" onclick="claimQuestReward('${q.id}')">استلام المكافأة 🎁</button>
+          ` : q.claimed ? `
+            <span class="badge badge-oasis">تم الاستلام ✅</span>
+          ` : `
+            <span class="muted">قيد التنفيذ...</span>
+          `}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
 function renderModal() {
   if (!state.selectedCastle) return '';
   const c = state.selectedCastle;
@@ -395,6 +514,8 @@ function render() {
     case "map": mainContent = renderMap(); break;
     case "buildings": mainContent = renderBuildings(); break;
     case "army": mainContent = renderArmy(); break;
+    case "research": mainContent = renderResearch(); break;
+    case "quests": mainContent = renderQuests(); break;
     default: mainContent = renderOverview();
   }
 
@@ -414,16 +535,18 @@ document.addEventListener("DOMContentLoaded", () => {
   loadGame();
   render();
 
-  // الإنتاج التلقائي للموارد كل 10 ثوانٍ بناءً على مستوى المباني
+  // الإنتاج التلقائي للموارد كل 10 ثوانٍ (مع مراعاة بونص الأبحاث وفيضان النيل)
   setInterval(() => {
     if (!state.user) return;
+    const miningTech = state.research.find(item => item.id === "pharaoh_mining")?.level || 0;
+    const bonusMultiplier = 1 + (miningTech * 0.2);
+
     state.buildings.forEach(b => {
-      if (b.id === 'gold_mine') state.resources.gold += b.level * 2;
-      if (b.id === 'quarry') state.resources.stone += b.level * 2;
-      if (b.id === 'farm') state.resources.food += b.level * 3;
+      if (b.id === 'gold_mine') state.resources.gold += Math.round(b.level * 2 * bonusMultiplier);
+      if (b.id === 'quarry') state.resources.stone += Math.round(b.level * 2 * bonusMultiplier);
+      if (b.id === 'farm') state.resources.food += Math.round(b.level * 3 * bonusMultiplier);
     });
     saveGame();
-    // تحديث الشاشة فقط إذا كان اللاعب مسجلاً الدخول
     render();
   }, 10000);
 });
