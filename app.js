@@ -1,32 +1,26 @@
-// === حالة اللعبة الإجمالية (State) ===
 const state = {
   commander: null,
   activeTab: "overview",
   toastMessage: null,
   toastTimer: null,
-  // موارد الفضاء الجديدة
   resources: {
-    energy: 300,    // طاقة شمسية
-    crystals: 150,  // بلورات كونية
-    alloy: 100,     // سبائك معدنية
-    data: 50        // بيانات علمية
+    energy: 300,
+    crystals: 150,
+    alloy: 100,
+    data: 50
   },
-  // محطة الأقمار الصناعية الفرعونية
   satellites: [
     { id: "horus_sat", name: "قمر حورس (عين الرؤية)", level: 1, cost: { energy: 100, alloy: 50 }, prod: "5 بيانات/10ث" },
     { id: "obelisk_sat", name: "مسلة الفضاء الكونية", level: 1, cost: { crystals: 80, alloy: 60 }, prod: "8 طاقة/10ث" }
   ],
-  // منصات صواريخ الاستكشاف
   rockets: [
     { id: "amun_1", name: "صاروخ أمون-1", count: 2, cost: { energy: 150, alloy: 100 } },
     { id: "ra_express", name: "مركبة رع السريعة", count: 0, cost: { crystals: 120, alloy: 150 } }
   ],
-  // معمل أبحاث الكون
   techs: [
     { id: "quantum_shields", name: "دروع طاقة أوزوريس", level: 0, maxLevel: 3, cost: { data: 40, crystals: 50 }, desc: "تزيد كفاءة جمع الموارد الفضائية بنسبة 25%." },
     { id: "ion_drive", name: "محركات الدفع الأيوني", level: 0, maxLevel: 3, cost: { data: 60, alloy: 80 }, desc: "تضاعف نجاح البعثات الفضائية بنسبة 20%." }
   ],
-  // بعثات الكواكب الفضائية
   missions: [
     { id: "moon", name: "استكشاف القمر الهلالي", target: "قمر الأرض", reward: { crystals: 100, data: 30 }, successRate: 85, active: false },
     { id: "mars", name: "رحلة كوكب المريخ الأحمر", target: "المريخ", reward: { crystals: 250, data: 90 }, successRate: 60, active: false },
@@ -38,7 +32,6 @@ const state = {
   ]
 };
 
-// === LocalStorage ===
 function saveGame() {
   localStorage.setItem('pharaonic_space_state', JSON.stringify(state));
 }
@@ -55,7 +48,6 @@ function loadGame() {
   }
 }
 
-// === أصوات تفاعلية عبر Web Audio API ===
 let audioCtx = null;
 function getAudioContext() {
   if (!audioCtx) {
@@ -102,7 +94,6 @@ function playRocketSound() {
   } catch (e) {}
 }
 
-// === الوظائف العامة ===
 function showToast(msg) {
   state.toastMessage = msg;
   render();
@@ -119,7 +110,6 @@ function addLog(text) {
   saveGame();
 }
 
-// === التفاعلات والتحكم ===
 function handleLogin(e) {
   e.preventDefault();
   const name = e.target.commanderName.value.trim();
@@ -139,14 +129,12 @@ function switchTab(tab) {
 function upgradeSatellite(satId) {
   const sat = state.satellites.find(s => s.id === satId);
   if (!sat) return;
-
   for (let res in sat.cost) {
     if (state.resources[res] < sat.cost[res]) {
       showToast("الموارد الفضائية غير كافية!");
       return;
     }
   }
-
   for (let res in sat.cost) {
     state.resources[res] -= sat.cost[res];
     sat.cost[res] = Math.round(sat.cost[res] * 1.6);
@@ -154,7 +142,7 @@ function upgradeSatellite(satId) {
   sat.level++;
   playLaserSound();
   addLog(`تم تطوير ${sat.name} إلى المستوى ${sat.level}`);
-  showToast(`تمت ترقية القمر الصناعي بنجاح!`);
+  showToast("تمت ترقية القمر الصناعي بنجاح!");
   saveGame();
   render();
 }
@@ -162,21 +150,19 @@ function upgradeSatellite(satId) {
 function buildRocket(rocketId) {
   const r = state.rockets.find(item => item.id === rocketId);
   if (!r) return;
-
   for (let res in r.cost) {
     if (state.resources[res] < r.cost[res]) {
       showToast("الموارد غير كافية لتصنيع الصاروخ!");
       return;
     }
   }
-
   for (let res in r.cost) {
     state.resources[res] -= r.cost[res];
   }
   r.count++;
   playRocketSound();
   addLog(`تم بناء صاروخ استكشافي جديد: ${r.name}`);
-  showToast(`تم إطلاق صاروخ جديد للمنصة!`);
+  showToast("تم إطلاق صاروخ جديد للمنصة!");
   saveGame();
   render();
 }
@@ -184,14 +170,12 @@ function buildRocket(rocketId) {
 function researchTech(techId) {
   const t = state.techs.find(item => item.id === techId);
   if (!t || t.level >= t.maxLevel) return;
-
   for (let res in t.cost) {
     if (state.resources[res] < t.cost[res]) {
       showToast("بيانات أو موارد البحث غير كافية!");
       return;
     }
   }
-
   for (let res in t.cost) {
     state.resources[res] -= t.cost[res];
     t.cost[res] = Math.round(t.cost[res] * 1.7);
@@ -207,24 +191,21 @@ function researchTech(techId) {
 function launchMission(missionId) {
   const m = state.missions.find(item => item.id === missionId);
   if (!m) return;
-
   const totalRockets = state.rockets.reduce((acc, curr) => acc + curr.count, 0);
   if (totalRockets <= 0) {
     showToast("لا توجد صواريخ جاهزة للإطلاق! اصنع صواريخ أولاً.");
     return;
   }
-
   playRocketSound();
   const ionTech = state.techs.find(item => item.id === "ion_drive")?.level || 0;
   const currentSuccess = Math.min(95, m.successRate + (ionTech * 12));
   const success = Math.random() * 100 <= currentSuccess;
-
   if (success) {
     for (let res in m.reward) {
       state.resources[res] = (state.resources[res] || 0) + m.reward[res];
     }
     addLog(`نجاح البعثة! تم استكشاف ${m.target} وجمع غنائم كونية.`);
-    showToast(`نجح الإطلاق! تم جلب موارد جديدة.`);
+    showToast("نجح الإطلاق! تم جلب موارد جديدة.");
   } else {
     addLog(`فشلت بعثة ${m.target} بسبب عاصفة نيازك كونية.`);
     showToast("فشلت البعثة وضاع الصاروخ!");
@@ -239,7 +220,6 @@ function launchMission(missionId) {
   render();
 }
 
-// === مكونات واجهة المستخدم (Views) ===
 function renderAuth() {
   return `
     <div class="auth-wrap">
@@ -284,7 +264,6 @@ function renderNav() {
     { id: "missions", label: "🌌 البعثات الكونية" },
     { id: "tech", label: "🔬 معمل الأبحاث" }
   ];
-
   return `
     <div class="nav">
       ${tabs.map(t => `
@@ -410,16 +389,13 @@ function renderToast() {
   return `<div class="toast">${state.toastMessage}</div>`;
 }
 
-// === دورة الرسم الرئيسية (Main Loop) ===
 function render() {
   const app = document.getElementById("app");
   if (!app) return;
-
   if (!state.commander) {
     app.innerHTML = renderAuth();
     return;
   }
-
   let mainContent = "";
   switch (state.activeTab) {
     case "overview": mainContent = renderOverview(); break;
@@ -429,7 +405,6 @@ function render() {
     case "tech": mainContent = renderTech(); break;
     default: mainContent = renderOverview();
   }
-
   app.innerHTML = `
     ${renderTopbar()}
     ${renderNav()}
@@ -440,23 +415,18 @@ function render() {
   `;
 }
 
-// === التشغيل التلقائي والإنتاج (Idle Loop) ===
 document.addEventListener("DOMContentLoaded", () => {
   loadGame();
   render();
-
   setInterval(() => {
     if (!state.commander) return;
     const shieldTech = state.techs.find(item => item.id === "quantum_shields")?.level || 0;
     const bonus = 1 + (shieldTech * 0.25);
-
     state.satellites.forEach(sat => {
       if (sat.id === 'horus_sat') state.resources.data += Math.round(sat.level * 5 * bonus);
       if (sat.id === 'obelisk_sat') state.resources.energy += Math.round(sat.level * 8 * bonus);
     });
-
     state.resources.alloy += 5;
-
     saveGame();
     render();
   }, 10000);
